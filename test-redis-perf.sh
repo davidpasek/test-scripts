@@ -7,7 +7,7 @@
 
 # Test params
 ########################
-NUM_OF_CONTAINERS=64
+NUM_OF_CONTAINERS=32
 ########################
 
 ########################
@@ -51,11 +51,10 @@ for i in `seq 1 $NUM_OF_CONTAINERS`;
 	  R=`cat $RESULT_FILE`
 	  RESULT_SET=`printf "%i" $R`
           echo "Result set ($c_name): $RESULT_SET"
-	  sleep 1
 	else
           echo "Result file $RESULT_FILE not found."
 	  RESULT_SET=0
-	  sleep 1
+	  sleep 2
       fi
     done
 
@@ -80,8 +79,43 @@ for i in `seq 1 $NUM_OF_CONTAINERS`;
 }
 
 echo "Test Redis Performance ..."
-start
-exec
-report
-clean
+echo "Usage: $0 <OPTION>"
+echo "Available options: all, start, exec, report, clean"
+OPT=$1
+if [ -z $OPT ];
+then
+  OPT="all"
+fi
+
+echo "Used options: $OPT"
+
+case $OPT in
+
+  all)
+    start
+    exec
+    report
+    clean
+    ;;
+
+  start)
+    start
+    ;;
+
+  exec)
+    exec
+    ;;
+
+  report)
+    report
+    ;;
+
+  clean)
+    clean
+    ;;
+
+  *)
+    echo "Unknown option"
+    ;;
+esac
 
