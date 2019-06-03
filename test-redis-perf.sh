@@ -5,21 +5,39 @@
 #echo 0 > /sys/kernel/debug/x86/retp_enabled
 #echo 0 > /sys/kernel/debug/x86/ibrs_enabled
 
-# Do a benchmark
+# Test params
+########################
+NUM_OF_CONTAINERS=64
+########################
 
-NUM_OF_CONTAINERS=3
-
+########################
+# START REDIS CONTAINERS
+########################
+function start {
 for i in `seq 1 $NUM_OF_CONTAINERS`;
   do
     c_name="redis$i"
     echo "Run container $i - $c_name"
     docker run --name $c_name -d redis
+  done
+}
+
+########################
+# EXEC TEST IN REDIS CONTAINERS
+########################
+function exec {
+for i in `seq 1 $NUM_OF_CONTAINERS`;
+  do
+    c_name="redis$i"
+    echo "Exec test in container $i - $c_name"
     docker exec $c_name redis-benchmark -t set --csv | cut -d"," -f2 | cut -d '"' -f2 > /tmp/$c_name.set.perf &
   done
+}
 
-
-# Report
-
+########################
+# START REDIS CONTAINERS
+########################
+function report {
 TOTAL_RESULT_SET=0
 for i in `seq 1 $NUM_OF_CONTAINERS`;
   do
@@ -33,11 +51,11 @@ for i in `seq 1 $NUM_OF_CONTAINERS`;
 	  R=`cat $RESULT_FILE`
 	  RESULT_SET=`printf "%i" $R`
           echo "Result set ($c_name): $RESULT_SET"
-	  sleep 2
+	  sleep 1
 	else
           echo "Result file $RESULT_FILE not found."
 	  RESULT_SET=0
-	  sleep 2
+	  sleep 1
       fi
     done
 
@@ -45,8 +63,12 @@ for i in `seq 1 $NUM_OF_CONTAINERS`;
   done
 
 echo "Total result of SET operation: $TOTAL_RESULT_SET"
+}
 
-# Clean environment
+########################
+# REMOVE REDIS CONTAINERS
+########################
+function clean {
 for i in `seq 1 $NUM_OF_CONTAINERS`;
   do
     c_name="redis$i"
@@ -55,3 +77,11 @@ for i in `seq 1 $NUM_OF_CONTAINERS`;
     docker container rm $c_name
     rm /tmp/$c_name.set.perf
   done
+}
+
+echo "Test Redis Performance ..."
+start
+exec
+report
+clean
+
